@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber-Grid Data Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the techy, neon glow */
+        :root {
+            --neon: #3fffff; /* Default Neon Blue */
+            --glow-color: #3fffff;
+        }
+        body {
+            background-color: #0d1117; /* Deep dark background */
+            font-family: 'Consolas', monospace;
+            color: var(--neon);
+            min-height: 100vh;
+        }
+        /* Dynamic Neon Styling */
+        .text-neon {
+            color: var(--glow-color);
+            text-shadow: 0 0 5px var(--glow-color), 0 0 10px rgba(63, 255, 255, 0.5);
+        }
+        .border-neon {
+            border: 1px solid var(--glow-color);
+            box-shadow: 0 0 8px var(--glow-color);
+        }
+        .metric-value {
+            font-size: 3rem;
+            line-height: 1;
+            transition: color 0.5s ease-in-out; 
+        }
+
+        /* Console styling */
+        .console-log {
+            height: 200px;
+            overflow-y: scroll;
+            scrollbar-width: none; /* Hide scrollbar for aesthetics */
+            background-color: #010409;
+            border-left: 2px solid var(--glow-color);
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            color: #94a3b8; /* Light gray text for log details */
+        }
+        .console-log::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* CRITICAL ALERT GLITCH EFFECT */
+        .glitch {
+            animation: glitch-anim 0.5s infinite alternate;
+        }
+        @keyframes glitch-anim {
+            0% { text-shadow: 0 0 0 red, 0 0 0 cyan; transform: translate(0); }
+            20% { text-shadow: 0.1em 0 0 red, -0.1em 0 0 cyan; transform: translate(-0.1em, 0.1em); }
+            40% { text-shadow: -0.1em 0 0 red, 0.1em 0 0 cyan; transform: translate(-0.1em, -0.1em); }
+            60% { text-shadow: 0.1em 0 0 red, 0.1em 0 0 cyan; transform: translate(0.1em, 0.1em); }
+            80% { text-shadow: -0.1em 0 0 red, -0.1em 0 0 cyan; transform: translate(0.1em, -0.1em); }
+            100% { text-shadow: 0 0 0 red, 0 0 0 cyan; transform: translate(0); }
+        }
+    </style>
+</head>
+
+<body class="p-8">
+    <header class="mb-10 text-center">
+        <h1 id="main-title" class="text-4xl font-bold uppercase tracking-widest text-neon">
+            :: Cyber-Grid Data Dashboard v2.1 ::
+        </h1>
+        <p class="text-gray-500 mt-2">LAST DATA PULL: <span id="last-updated">--:--:--</span></p>
+    </header>
+
+    <main class="grid grid-cols-3 gap-8 mb-8">
+        <div id="cpu-panel" class="p-6 bg-gray-900 bg-opacity-70 border-neon rounded-lg transition hover:scale-[1.02]">
+            <h2 class="text-xl mb-4 text-gray-400">CPU LOAD</h2>
+            <div id="cpu-load-value" class="metric-value text-neon">0.00%</div>
+            <div class="w-full h-2 bg-gray-700 mt-4 rounded-full">
+                <div id="cpu-bar" class="h-2 rounded-full transition-all duration-500" style="background-color: var(--glow-color);"></div>
+            </div>
+             <p id="cpu-status" class="text-neon mt-4 font-semibold text-sm transition-opacity duration-300 opacity-0">STATUS: NOMINAL</p>
+        </div>
+
+        <div id="net-panel" class="p-6 bg-gray-900 bg-opacity-70 border-neon rounded-lg transition hover:scale-[1.02]">
+            <h2 class="text-xl mb-4 text-gray-400">NETWORK (Mbps)</h2>
+            <div id="network-traffic-value" class="metric-value text-neon">0.000</div>
+            <p class="text-gray-500 mt-4">Active Ports: 4/12</p>
+        </div>
+
+        <div id="disk-panel" class="p-6 bg-gray-900 bg-opacity-70 border-neon rounded-lg transition hover:scale-[1.02]">
+            <h2 class="text-xl mb-4 text-gray-400">DISK UTILIZATION</h2>
+            <div id="disk-util-value" class="metric-value text-neon">0.00%</div>
+            <p class="text-gray-500 mt-4">Free Space: 245 GB</p>
+        </div>
+    </main>
+
+    <section class="grid grid-cols-5 gap-8">
+        <div class="col-span-2 p-4 bg-gray-900 bg-opacity-70 border-neon rounded-lg">
+            <h2 class="text-lg mb-4 text-neon">:: SYSTEM HEALTH CHECK ::</h2>
+            <div id="health-grid" class="grid grid-cols-2 gap-4">
+                </div>
+        </div>
+
+        <div class="col-span-3 p-4 bg-gray-900 bg-opacity-70 border-neon rounded-lg">
+            <h2 class="text-lg mb-2 text-neon">:: REAL-TIME DATA LOG ::</h2>
+            <div id="log-console" class="console-log">
+                </div>
+        </div>
+    </section>
+    
+    <script>
+        // --- DOM REFERENCES ---
+        const cpuValue = document.getElementById('cpu-load-value');
+        const cpuBar = document.getElementById('cpu-bar');
+        const cpuPanel = document.getElementById('cpu-panel');
+        const cpuStatus = document.getElementById('cpu-status');
+        const networkValue = document.getElementById('network-traffic-value');
+        const diskValue = document.getElementById('disk-util-value');
+        const lastUpdated = document.getElementById('last-updated');
+        const healthGrid = document.getElementById('health-grid');
+        const logConsole = document.getElementById('log-console');
+        const root = document.documentElement;
+        const title = document.getElementById('main-title');
+
+        // Dummy data for the System Health Grid (simulates other system services)
+        const systemServices = [
+            { name: 'API Gateway', status: 'OK', min: 1, max: 2 },
+            { name: 'Auth Server', status: 'OK', min: 1, max: 2 },
+            { name: 'Cache Layer', status: 'OK', min: 1, max: 10 },
+            { name: 'DB Connector', status: 'OK', min: 1, max: 5 },
+            { name: 'Load Balancer', status: 'WARN', min: 1, max: 10 },
+            { name: 'Telemetry', status: 'OK', min: 1, max: 20 }
+        ];
+
+        /**
+         * Generates random metrics data locally.
+         * This replaces the need for a Node.js backend.
+         */
+        const generateRandomMetrics = () => {
+            // Generate values within typical operating ranges
+            const cpuLoad = (Math.random() * 45) + 50; 
+            const networkTraffic = (Math.random() * 10) + 0.5;
+            const diskUtilization = (Math.random() * 40) + 10;
+
+            return {
+                cpu_load: cpuLoad.toFixed(2),
+                network_traffic_mbps: networkTraffic.toFixed(3),
+                disk_utilization: diskUtilization.toFixed(2),
+            };
+        };
+
+        /**
+         * Renders the System Health Grid.
+         */
+        const renderHealthGrid = (cpuLoad) => {
+            healthGrid.innerHTML = ''; // Clear previous entries
+            
+            systemServices.forEach(service => {
+                let currentStatus = service.status;
+                let colorClass = 'text-green-400';
+                let icon = '✅';
+
+                // Introduce a random chance of error or warning
+                const errorRoll = Math.random() * 100;
+
+                // Make the Cache Layer and Load Balancer more likely to fail under high CPU load
+                if (service.name === 'Cache Layer' && cpuLoad > 70 && errorRoll < 50) {
+                     currentStatus = 'ERROR';
+                } else if (service.name === 'Load Balancer' && cpuLoad > 50 && errorRoll < 20) {
+                     currentStatus = 'WARN';
+                }
+                
+                // Assign visual styling based on status
+                if (currentStatus === 'ERROR') {
+                    colorClass = 'text-red-500';
+                    icon = '❌';
+                } else if (currentStatus === 'WARN') {
+                    colorClass = 'text-yellow-500';
+                    icon = '⚠️';
+                }
+
+                const itemHTML = `
+                    <div class="flex justify-between items-center p-2 rounded bg-gray-800 transition-colors duration-500">
+                        <span class="text-gray-400">${service.name}</span>
+                        <span class="font-bold ${colorClass}">${icon} ${currentStatus}</span>
+                    </div>
+                `;
+                healthGrid.innerHTML += itemHTML;
+            });
+        };
+
+        /**
+         * Adds a log entry to the console.
+         */
+        const addLogEntry = (cpuLoad) => {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString();
+            let logMessage;
+            let logColor = '#94a3b8'; // Default gray
+            
+            if (cpuLoad >= 80) {
+                logMessage = `[${timeStr}] <ERROR> CRITICAL CPU THRESHOLD BREACHED: ${cpuLoad.toFixed(2)}%`;
+                logColor = '#ff3f3f'; // Red
+            } else if (cpuLoad >= 60) {
+                logMessage = `[${timeStr}] <WARNING> High Load detected. Initiating buffer check.`;
+                logColor = '#ffff3f'; // Yellow
+            } else {
+                logMessage = `[${timeStr}] <INFO> Metrics check complete. CPU: ${cpuLoad.toFixed(2)}%`;
+                logColor = '#3fffff'; // Blue
+            }
+            
+            const newLog = document.createElement('div');
+            newLog.innerHTML = `<span style="color: ${logColor};">${logMessage}</span>`;
+            
+            // Add to the top
+            logConsole.prepend(newLog);
+
+            // Keep log size manageable (optional, for performance)
+            if (logConsole.children.length > 30) {
+                logConsole.removeChild(logConsole.lastChild);
+            }
+        };
+
+
+        // --- MAIN DATA UPDATE FUNCTION ---
+        const fetchMetrics = () => { // Changed from async since it no longer uses fetch
+            try {
+                // Now generating data locally instead of fetching from the server
+                const data = generateRandomMetrics();
+                
+                // --- VISUAL LOGIC ---
+                const cpuLoad = parseFloat(data.cpu_load);
+                
+                let glowColor = '#3fffff'; 
+                let statusText = 'STATUS: NOMINAL';
+
+                if (cpuLoad >= 80) {
+                    glowColor = '#ff3f3f'; 
+                    statusText = 'STATUS: CRITICAL OVERLOAD!';
+                    title.classList.add('glitch');
+                    cpuStatus.classList.add('glitch');
+                    cpuPanel.classList.add('border-red-500'); 
+                } else if (cpuLoad >= 60) {
+                    glowColor = '#ffff3f'; 
+                    statusText = 'STATUS: HIGH LOAD';
+                    title.classList.remove('glitch');
+                } else {
+                    glowColor = '#3fffff'; 
+                    title.classList.remove('glitch');
+                    cpuStatus.classList.remove('glitch');
+                    cpuPanel.classList.remove('border-red-500');
+                }
+
+                // Apply the determined color to the CSS variables
+                root.style.setProperty('--glow-color', glowColor);
+                
+                // --- UPDATE DISPLAY ELEMENTS ---
+                
+                cpuValue.textContent = cpuLoad.toFixed(2) + '%';
+                cpuBar.style.width = `${Math.min(100, cpuLoad)}%`;
+                cpuBar.style.backgroundColor = glowColor; 
+                cpuStatus.textContent = statusText;
+                cpuStatus.style.opacity = '1'; 
+
+                networkValue.textContent = parseFloat(data.network_traffic_mbps).toFixed(3);
+                diskValue.textContent = parseFloat(data.disk_utilization).toFixed(2) + '%';
+                lastUpdated.textContent = new Date().toLocaleTimeString();
+
+                // --- NEW COMPONENT UPDATES ---
+                renderHealthGrid(cpuLoad);
+                addLogEntry(cpuLoad);
+
+            } catch (error) {
+                console.error("Error generating data locally:", error);
+                
+                // Display fatal error state
+                root.style.setProperty('--glow-color', '#ff3f3f'); 
+                title.textContent = ":: LOCAL ERROR ::";
+                title.classList.add('glitch');
+                cpuValue.textContent = "DATA FAIL";
+                lastUpdated.textContent = "FATAL ERROR";
+            }
+        };
+
+        // Initialize and repeat
+        fetchMetrics(); 
+        setInterval(fetchMetrics, 1000); 
+
+        // Initial render of the health grid before the first data fetch
+        renderHealthGrid(0); 
+
+    </script>
+</body>
+</html>
